@@ -1,0 +1,27 @@
+{
+  "name": "weibo",
+  "version": "0.1.0",
+  "description": "node.js weibo.com client",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/tarkus/weibo.git"
+  },
+  "dependencies": {
+    "coffee-script": "*",
+    "express": "*",
+    "connect-assets": "*",
+    "jade": "*",
+    "stylus": "*",
+    "mocha": "*",
+    "should": "*"
+  },
+  "keywords": [
+    "weibo"
+  ],
+  "author": "Tarkus Liu",
+  "license": "BSD"
+}

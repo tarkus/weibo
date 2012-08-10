@@ -1,7 +1,8 @@
-express = require('express')
-routes = require('./routes')
-http = require('http')
-path = require('path')
+express = require 'express'
+routes = require './routes'
+http = require 'http'
+path = require 'path'
+querystring = require 'querystring'
 
 app = express()
 
@@ -21,7 +22,14 @@ app.configure ->
 
 app.configure 'development', -> app.use express.errorHandler()
 
-app.get '/', routes.index
+need_authorize = (req, res, next) ->
+  unless req.session.oauth_access_token?
+    return res.redirect '/login?redirect=' + querystring.escape(req.originalUrl)
+  next()
+  
+app.get '/login', routes.login
+app.get '/callback', routes.callback
+app.get '/', need_authorize, routes.index
 
 exports.boot = boot = ->
   http.createServer(app).listen app.get('port'), ->

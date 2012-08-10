@@ -14,6 +14,7 @@
     "coffee-script": "*",
     "oauth": "*",
     "express": "*",
+    "querystring": "*",
     "connect-assets": "*",
     "jade": "*",
     "stylus": "*",

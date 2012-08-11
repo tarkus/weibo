@@ -1,10 +1,24 @@
 config  = require __dirname + '/../config'
 {OAuth} = require 'oauth'
 
+createClient = (req) ->
+  return new OAuth req.session.oa._requestUrl,
+    req.session.oa._accessUrl,
+    req.session.oa._consumerKey,
+    req.session.oa._consumerSecret,
+    req.session.oa._version,
+    req.session.oa._authorize_callback,
+    req.session.oa._signatureMethod
+
 exports.index = (req, res) ->
-  res.render 'index', { title: 'knock knock' }
+  oa = createClient(req)
+  oa.get config.api_baseurl + 'statuses/user_timeline.json?trim_user=1',
+    req.session.oauth_access_token, req.session.oauth_access_token_secret,
+    (err, data, result) ->
+      return res.send 500, error: err if err?
+      res.render 'index', { title: 'knock knock', data: data }
     
-exports.login = (req, res) ->
+exports .login = (req, res) ->
   console.log req.headers
   if req.query.redirect?
     req.session.redirect = req.query.redirect

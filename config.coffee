@@ -6,5 +6,6 @@ module.exports =
   request_token_url: "http://api.t.sina.com.cn/oauth/request_token"
   access_token_url: "http://api.t.sina.com.cn/oauth/access_token"
   authorize_url: "http://api.t.sina.com.cn/oauth/authorize"
+  api_baseurl: "http://api.weibo.com/2/"
   	  
 

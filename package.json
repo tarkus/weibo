@@ -11,6 +11,10 @@
     "url": "git://github.com/tarkus/weibo.git"
   },
   "dependencies": {
+    "nohm": "*",
+    "redis": "*",
+    "querystring": "*",
+    "prompt": "*",
     "coffee-script": "*",
     "oauth": "*",
     "express": "*",

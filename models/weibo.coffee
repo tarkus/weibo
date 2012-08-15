@@ -9,9 +9,11 @@ module.exports = Nohm.model 'Weibo',
       index: true
     weibo_id:
       type: 'integer'
+      unique: true
       index: true
     raw:
       type: 'json'
     updated_at:
       type: 'timestamp'
-      defaultValue: new Date()
+      defaultValue: ->
+        Math.round(Date.now() / 1000)

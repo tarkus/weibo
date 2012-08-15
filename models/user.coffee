@@ -10,9 +10,9 @@ module.exports = Nohm.model 'User',
       index: true
     name:
       type: 'string'
-      index: true
     raw:
       type: 'json'
     updated_at:
       type: 'timestamp'
-      defaultValue: new Date()
+      defaultValue: ->
+        Math.round(Date.now() / 1000)

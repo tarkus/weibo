@@ -1,11 +1,25 @@
 #should = require 'should'
-helper = require './helper'
-Weibo  = require '../lib/weibo'
+testHelper = require './helper'
+helper = require __dirname + '/../lib/helper'
 
-describe "Login with given credential", ->
+describe "Test helpers", ->
 
   before ->
 
-  it 'should log in', (done) ->
-    client = new Weibo
+  it 'printObject', (done) ->
+    obj =
+      foo: 'bar'
+      text: '中文'
+      ###
+      deeper:
+        level: 1
+        deeper:
+          level: 2
+      ###
+
+    console.log "\n" + helper.printObject(obj)
+    helper.printObject(obj).should.eql """
+      "foo": "bar", 
+      "text": "中文"
+    """
     done()

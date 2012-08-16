@@ -32,7 +32,7 @@ askForCredential = (next) ->
     next?()
 
 login = (next) ->
-  request.post config.loginURL,
+  request.post config.login_url,
     body: qs.stringify
       check: 1
       backURL: "http://m.weibo.cn"
@@ -52,7 +52,7 @@ fetch = (options, callback) ->
 
   params =
     qs:
-      u: config.userId
+      u: config.user_id
       hideAvanta: 1
       page: options.page
       below: '&'
@@ -66,7 +66,7 @@ fetch = (options, callback) ->
       j.add cookie
     params.jar = j
 
-  request config.fetchURL, params, (err, res, body) ->
+  request config.fetch_url, params, (err, res, body) ->
     if err? or res.headers.statusCode is not 200
       return halt 'Fetching Error:', body
 
@@ -83,8 +83,8 @@ fetch = (options, callback) ->
       return callback() if options.page is json.maxPage
       console.log "#{json.maxPage - options.page} pages left, take a rest"
       setTimeout ->
-        fetch page: options.page + 1, -> callback
-      , 5000
+        fetch page: options.page + 1, -> callback()
+      , 6000
 
 
 halt = (msg, err) ->

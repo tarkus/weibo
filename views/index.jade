@@ -16,12 +16,15 @@ block content
   .container
     #main
       .page-header
-        h1 Profile
+        h3 Profile
       .row
         .span12
-          .well
+          .progress.progress-striped.progress-info.hide
+            .bar(style="width: 0")
+          pre 
+            | #{JSON.stringify(user, null, 2)}
       .row
         .span12
           pre
-            | #{JSON.stringify(data, null, 2)}
+            | #{JSON.stringify(weibo, null, 2)}
 

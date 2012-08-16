@@ -1,5 +1,6 @@
 {OAuth} = require 'oauth'
 config  = require '../config'
+helper  = require '../lib/helper'
 qs      = require 'querystring'
 
 Weibo   = require '../models/weibo'
@@ -26,6 +27,8 @@ module.exports = (app) ->
   
   index: (req, res, next) ->
                 
+    page = _page = req.query.page
+    page_size = 50
     oa = createClient(req)
 
     fetchUser = (next) ->
@@ -79,10 +82,10 @@ module.exports = (app) ->
       defaults =
         uid: config.user_id
         trim_user: 1
-        count: 100
-        page: 1
+        page: _page
       params = params or defaults
       params = defaults extends params
+      params.count = page_size
 
       oa.get config.api_baseurl + 'statuses/user_timeline.json?' + qs.stringify(params),
         req.session.oauth_access_token, req.session.oauth_access_token_secret,
@@ -133,7 +136,7 @@ module.exports = (app) ->
       Weibo.sort
         field: 'weibo_id'
         direction: 'DESC'
-        limit: [0, 30]
+        limit: [(_page - 1) * page_size, page_size]
       , (err, ids) ->
         if ids.length < 1
           return fetchWeibo (json) -> storeWeibo json, (weiboData) ->
@@ -149,28 +152,48 @@ module.exports = (app) ->
             next?(userData, weiboData) if counter is ids.length
 
     updateClient = ->
-      if app.socket?
-        app.socket.emit 'fetching',
-          current: res.locals.current_page
-          total: res.locals.total_pages
-        res.locals.current_page++
-
+      unless app.socket?
+        return setTimeout ->
+          updateClient()
+        , 3000
+      ###
+      app.socket.emit 'fetching',
+        current: _page
+        total: res.locals.pager.max
+      return if page is res.locals.pager.max
+      _page++
       setTimeout ->
         updateClient()
-      , 5000
+      , 3000
+      return
+      ###
+      getWeibo null, ->
+        app.socket.emit 'fetching',
+          current: _page
+          total: res.locals.pager.max
+        return if page is res.locals.pager.max
+        _page++
+        setTimeout ->
+          updateClient()
+        , 3000
 
     getUser (userData) -> getWeibo userData, (userData, weiboData) ->
-      res.locals.current_page = 1
-      res.locals.total_pages = Math.floor(userData.statuses_count / 100) + 1
+
+      res.locals.pager = helper.pager
+        page: page
+        size: page_size
+        total: userData.statuses_count
+        range: 5
+
       res.render 'index',
         weibo: weiboData
         user: userData
+        weiboText: (text) ->
+          text.replace(/@([^:|：| |”]+)([:|：| |”])/g, "<a href='http://weibo.com/n/$1'>@$1</a>$2").
+            replace(/(http:\/\/t.cn\/\w+)/g, "<a href='$1'>$1</a>")
+
+      _page = 1
       updateClient()
-
-      return if res.locals.current_page is res.locals.total_pages
-
-    
-  sync: (req, res, next) ->
   
   login: (req, res, next) ->
     if req.query.redirect?

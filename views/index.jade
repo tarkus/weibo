@@ -1,30 +1,66 @@
 extends layout
 
+mixin weibo(line)
+  .weibo
+    .well 
+      != weiboText(line.text)
+      if line.thumbnail_pic
+        br
+        .thumbnail
+          img(src="#{line.thumbnail_pic}")
+          img(src="#{line.bmiddle_pic}", style="display: none", rel="#{line.original_pic}")
+      if line.retweeted_status
+        mixin weibo(line.retweeted_status)
+    .info
+      if line.created_at
+        abbr.timeago(title="#{line.created_at}")   
+      if line.source
+        |  来自#{line.source.replace(/<[^>]+>/g, '')}  
+      .pull-right
+        | 转发(#{line.reposts_count}) 评论(#{line.comments_count}) 
+
+mixin pagination(pager)
+  .row
+    .pagination.pull-right
+      ul
+        li(class=(pager.page == 1 && 'disabled'))
+          a(href=(pager.page == 1 && "###" || "/?page=1")) ⇤
+        for link in pager.pages
+          li(class=(pager.page == link && 'active'))
+            a(href=(pager.page == link && "###" || "/?page=" + link)) #{link}
+        li(class=(pager.page == pager.max && 'disabled'))
+          a(href=(pager.page == pager.max && "###" || "/?page=" + pager.max)) ⇥
+
 block content
-  // .navbar.navbar-fixed-top
-  //   .navbar-inner
-  //     .container
-  //       a.btn.btn-navbar(data-toggle="collapse", data-target=".nav-collapse")
-  //         span.icon-bar
-  //         span.icon-bar
-  //         span.icon-bar
-  //       a.brand(href="/") Weibo Backup
-  //       .nav-collapse
-  //         ul.nav
-  //         ul.nav.pull-right
 
   .container
     #main
-      .page-header
-        h3 Profile
       .row
-        .span12
-          .progress.progress-striped.progress-info.hide
-            .bar(style="width: 0")
-          pre 
-            | #{JSON.stringify(user, null, 2)}
+        .span3.offset2.avatar
+          .thumbnail(style="width: 180px;height: 180px")
+            img(src="#{user.avatar_large}")
+        .span5.profile
+          h2.name #{user.name}
+          p.title #{user.verified_reason}
+          a.address(href="http://weibo.com/" + (user.domain)) http://weibo.com/#{user.domain}
+          br
+          br
+          .description
+            p #{user.description}
       .row
-        .span12
-          pre
-            | #{JSON.stringify(weibo, null, 2)}
-
+        .span8.offset2
+          .sync-progress
+            .legend.small.invisible &nbsp; 
+            .progress.progress-striped.progress-success.active
+              .bar(style="width: 0")
+          if pager
+            mixin pagination(pager)
+          for line in weibo
+            mixin weibo(line)
+          if pager
+            mixin pagination(pager)
+          //-pre 
+            //-| #{JSON.stringify(weibo, null, 2)}
+  
+  #modal.modal.hide
+    .modal-body

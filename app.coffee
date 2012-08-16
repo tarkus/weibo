@@ -63,6 +63,10 @@ exports.boot = boot = ->
 
     app.socket = socket
     socket.emit 'connected', true
+    
+  io.sockets.on 'disconnect', () ->
+
+    delete app.socket
 
   server.listen app.get('port'), ->
     console.log "Server is listening on port " + app.get('port')

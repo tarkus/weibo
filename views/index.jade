@@ -20,16 +20,15 @@ mixin weibo(line)
         | 转发(#{line.reposts_count}) 评论(#{line.comments_count}) 
 
 mixin pagination(pager)
-  .row
-    .pagination.pull-right
-      ul
-        li(class=(pager.page == 1 && 'disabled'))
-          a(href=(pager.page == 1 && "###" || "/?page=1")) ⇤
-        for link in pager.pages
-          li(class=(pager.page == link && 'active'))
-            a(href=(pager.page == link && "###" || "/?page=" + link)) #{link}
-        li(class=(pager.page == pager.max && 'disabled'))
-          a(href=(pager.page == pager.max && "###" || "/?page=" + pager.max)) ⇥
+  .pagination.pull-right
+    ul
+      li(class=(pager.page == 1 && 'disabled'))
+        a(href=(pager.page == 1 && "###" || "/?page=1")) ⇤
+      for link in pager.pages
+        li(class=(pager.page == link && 'active'))
+          a(href=(pager.page == link && "###" || "/?page=" + link)) #{link}
+      li(class=(pager.page == pager.max && 'disabled'))
+        a(href=(pager.page == pager.max && "###" || "/?page=" + pager.max)) ⇥
 
 block content
 
@@ -39,7 +38,7 @@ block content
         .span3.offset2.avatar
           .thumbnail(style="width: 180px;height: 180px")
             img(src="#{user.avatar_large}")
-        .span5.profile
+        .span6.profile
           h2.name #{user.name}
           p.title #{user.verified_reason}
           a.address(href="http://weibo.com/" + (user.domain)) http://weibo.com/#{user.domain}
@@ -55,8 +54,9 @@ block content
               .bar(style="width: 0")
           if pager
             mixin pagination(pager)
-          for line in weibo
-            mixin weibo(line)
+          .weibos
+            for line in weibo
+              mixin weibo(line)
           if pager
             mixin pagination(pager)
           //-pre 

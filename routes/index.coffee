@@ -7,7 +7,7 @@ Weibo   = require '../models/weibo'
 User    = require '../models/user'
 
 halt = ->
-  console.log arguments
+  console.log arguments.join ' '
   
 now = exports.now = ->
   Math.round(Date.now() / 1000)
@@ -27,7 +27,7 @@ module.exports = (app) ->
   
   index: (req, res, next) ->
                 
-    page = _page = req.query.page
+    page = _page = req.query.page ? 1
     page_size = 50
     oa = createClient(req)
 
@@ -37,6 +37,10 @@ module.exports = (app) ->
       oa.get config.api_baseurl + 'users/show.json?' + qs.stringify(params),
         req.session.oauth_access_token, req.session.oauth_access_token_secret,
         (err, data, result) ->
+          if err? and err.statusCode is 403
+            return setTimeout ->
+              fetchUser next
+            , 6000
           return console.log err if err
           try
             json = JSON.parse(data)
@@ -47,7 +51,7 @@ module.exports = (app) ->
     storeUser = exports.storeUser = (data, next) ->
       user = new User
       user.prop
-        user_id: data.id
+        user_id: parseInt(data.id)
         name: data.name
         raw: data
       user.save (err) ->
@@ -90,6 +94,10 @@ module.exports = (app) ->
       oa.get config.api_baseurl + 'statuses/user_timeline.json?' + qs.stringify(params),
         req.session.oauth_access_token, req.session.oauth_access_token_secret,
         (err, data, result) ->
+          if err? and err.statusCode is 403
+            return setTimeout ->
+              fetchUser next
+            , 6000
           return console.log err if err
           try
             json = JSON.parse(data)
@@ -98,13 +106,14 @@ module.exports = (app) ->
           next?(json.statuses)
 
     storeWeibo = exports.storeWeibo = (data, next) ->
+      return halt 'storeWeibo', data unless data?
       counter = 0
       weiboData = []
       for entry in data
         weibo = new Weibo
         weibo.prop
-          user_id: entry.user_id
-          weibo_id: entry.id
+          user_id: parseInt(entry.user_id)
+          weibo_id: parseInt(entry.id)
           raw: entry
 
         weibo.save (err) ->
@@ -138,7 +147,7 @@ module.exports = (app) ->
         direction: 'DESC'
         limit: [(_page - 1) * page_size, page_size]
       , (err, ids) ->
-        if ids.length < 1
+        if not ids or ids.length < 1
           return fetchWeibo (json) -> storeWeibo json, (weiboData) ->
             next?(userData, weiboData)
         #fetchWeibo (json) -> storeWeibo json
@@ -155,7 +164,7 @@ module.exports = (app) ->
       unless app.socket?
         return setTimeout ->
           updateClient()
-        , 3000
+        , 6000
       ###
       app.socket.emit 'fetching',
         current: _page
@@ -175,7 +184,7 @@ module.exports = (app) ->
         _page++
         setTimeout ->
           updateClient()
-        , 3000
+        , 6000
 
     getUser (userData) -> getWeibo userData, (userData, weiboData) ->
 
@@ -183,14 +192,14 @@ module.exports = (app) ->
         page: page
         size: page_size
         total: userData.statuses_count
-        range: 5
+        range: 9
 
-      res.render 'index',
+      return res.render 'index',
         weibo: weiboData
         user: userData
         weiboText: (text) ->
-          text.replace(/@([^:|：| |”]+)([:|：| |”])/g, "<a href='http://weibo.com/n/$1'>@$1</a>$2").
-            replace(/(http:\/\/t.cn\/\w+)/g, "<a href='$1'>$1</a>")
+          text.replace(/(http:\/\/[^\/]+\/\w+)/g, "<a href='$1'>$1</a>").
+            replace(/@([^:|：| |”|，|,|。]+)([:|：| |”|，|,|。])/g, "<a href='http://weibo.com/n/$1'>@$1</a>$2")
 
       _page = 1
       updateClient()

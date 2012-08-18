@@ -79,7 +79,10 @@ module.exports = (app) ->
         #fetchUser (json) -> storeUser json
         User.load parseInt(ids[0]), (err, props) ->
           return halt if err?
-          next @prop('raw')
+          userData = props.raw
+          userData.fetched_count = props.fetched_count
+          return next userData
+          #updateFetchedCount()
 
     fetchWeibo = (params, next) ->
       if typeof params is 'function'
@@ -123,6 +126,7 @@ module.exports = (app) ->
             counter++
             weiboData.push @prop('raw')
             if counter is data.length
+              updateFetchedCount()
               return next?(weiboData)
             return weiboData
 
@@ -141,7 +145,9 @@ module.exports = (app) ->
                 return halt 'storeWeibo::update', err if err?
                 counter++
                 weiboData.push @prop('raw')
-                return next?(weiboData) if counter is data.length
+                if counter is data.length
+                  updateFetchedCount()
+                  next?(weiboData)
 
     getWeibo = (userData, next) ->
       Weibo.sort
@@ -151,7 +157,7 @@ module.exports = (app) ->
       , (err, ids) ->
         if not ids or ids.length < 1
           unless config.fetch_mode? and config.fetch_mode is 1
-            return halt "Need fetch Weibo" 
+            return halt "Need fetch Weibo"
           return fetchWeibo (json) -> storeWeibo json, (weiboData) ->
             next?(userData, weiboData)
         #fetchWeibo (json) -> storeWeibo json
@@ -164,10 +170,22 @@ module.exports = (app) ->
             weiboData.push @prop('raw')
             next?(userData, weiboData) if counter is ids.length
 
-    updateClient = ->
+    updateFetchedCount = ->
+      User.find user_id: config.user_id, (err, ids) ->
+        return halt 'updateFetchedCount', err if err
+        User.load parseInt(ids[0]), (err, props) ->
+          return halt 'updateFetchedCount::get user', err if err?
+          user = @
+          Weibo.find (err, ids) ->
+            return halt 'updateFetchedCount::get count', err if err?
+            user.prop 'fetched_count', ids.length
+            user.save()
+            console.log 'Update fetched_count to ', ids.length
+
+    fetchMore = ->
       unless app.socket?
         return setTimeout ->
-          updateClient()
+          fetchMore()
         , 6000
       ###
       app.socket.emit 'fetching',
@@ -187,26 +205,26 @@ module.exports = (app) ->
         return if page is res.locals.pager.max
         _page++
         setTimeout ->
-          updateClient()
+          fetchMore()
         , 6000
 
-    getUser (userData) -> getWeibo userData, (userData, weiboData) ->
-
+    getUser (user) ->
       res.locals.pager = helper.pager
         page: page
         size: page_size
-        total: userData.statuses_count
+        total: user.fetched_count
         range: 9
+      page = _page = Math.min(res.locals.pager.max, page)
+      getWeibo user, (user, weibo) ->
+        return res.render 'index',
+          weibo: weibo
+          user: user
+          weiboText: (text) ->
+            text.replace(/(http:\/\/[^\/]+\/\w+)/g, "<a href='$1'>$1</a>").
+              replace(/@([^:|：| |”|，|,|。]+)([:|：| |”|，|,|。])/g, "<a href='http://weibo.com/n/$1'>@$1</a>$2")
 
-      return res.render 'index',
-        weibo: weiboData
-        user: userData
-        weiboText: (text) ->
-          text.replace(/(http:\/\/[^\/]+\/\w+)/g, "<a href='$1'>$1</a>").
-            replace(/@([^:|：| |”|，|,|。]+)([:|：| |”|，|,|。])/g, "<a href='http://weibo.com/n/$1'>@$1</a>$2")
-
-      _page = 1
-      updateClient()
+        #_page = 1
+        #fetchMore()
   
   login: (req, res, next) ->
     if req.query.redirect?

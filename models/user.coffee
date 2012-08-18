@@ -10,6 +10,9 @@ module.exports = Nohm.model 'User',
       index: true
     name:
       type: 'string'
+    fetched_count:
+      type: 'integer'
+      defaultValue: null
     raw:
       type: 'json'
     updated_at:

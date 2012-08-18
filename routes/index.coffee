@@ -7,7 +7,7 @@ Weibo   = require '../models/weibo'
 User    = require '../models/user'
 
 halt = ->
-  console.log arguments.join ' '
+  console.log arguments
   
 now = exports.now = ->
   Math.round(Date.now() / 1000)
@@ -72,7 +72,9 @@ module.exports = (app) ->
 
     getUser = (next) ->
       User.find user_id: config.user_id, (err, ids) ->
-        if ids.length < 1
+        if not ids or ids.length < 1
+          unless config.fetch_mode? and config.fetch_mode is 1
+            return halt "Need fetch User" 
           return fetchUser (json) -> storeUser json, -> getUser next
         #fetchUser (json) -> storeUser json
         User.load parseInt(ids[0]), (err, props) ->
@@ -148,6 +150,8 @@ module.exports = (app) ->
         limit: [(_page - 1) * page_size, page_size]
       , (err, ids) ->
         if not ids or ids.length < 1
+          unless config.fetch_mode? and config.fetch_mode is 1
+            return halt "Need fetch Weibo" 
           return fetchWeibo (json) -> storeWeibo json, (weiboData) ->
             next?(userData, weiboData)
         #fetchWeibo (json) -> storeWeibo json

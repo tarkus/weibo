@@ -13,7 +13,7 @@ sessionStore = new RedisStore
 redisClient = redis.createClient()
 
 app = express()
-app.set 'port', process.env.PORT || 4444
+app.set 'port', process.env.PORT || 5000
 app.set 'views', __dirname + '/views'
 app.set 'view engine', 'jade'
 
@@ -46,7 +46,10 @@ redisClient.on 'connect', ->
 
   app.get '/login', routes.login
   app.get '/callback', routes.callback
-  app.get '/', need_authorize, routes.index
+  if config.fetch_mode? and config.fetch_mode is 1
+    app.get '/', need_authorize, routes.index
+  else
+    app.get '/', routes.index
 
 exports.boot = boot = ->
   server = http.createServer(app)
